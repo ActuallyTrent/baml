@@ -17,6 +17,8 @@ import {
   SidebarMenuSub,
   SidebarRail,
   SidebarSeparator,
+  SidebarTrigger,
+  useSidebar,
 } from '@baml/ui/sidebar';
 import { useAtomValue } from 'jotai';
 import {
@@ -25,15 +27,20 @@ import {
   ChevronUp,
   FlaskConical,
   Play,
+  Settings,
+  SidebarCloseIcon,
+  Square,
 } from 'lucide-react';
 import * as React from 'react';
-import { selectedItemAtom } from '../atoms';
+import { selectedItemAtom, areTestsRunningAtom } from '../atoms';
 import { useRunBamlTests } from '../prompt-preview/test-panel/test-runner';
+import { testHistoryAtom, selectedHistoryIndexAtom } from '../prompt-preview/test-panel/atoms';
 import { functionsAtom, isSidebarOpenAtom } from './atoms';
 import { FunctionItem } from './function-item';
 import { SearchForm } from './search-form';
 import { TestItem } from './test-item';
 import type { FunctionData } from './types';
+import { Button } from '@baml/ui/button';
 
 export { isSidebarOpenAtom };
 
@@ -43,8 +50,14 @@ export function TestingSidebar() {
   const [openCollapsibles, setOpenCollapsibles] = React.useState<Set<string>>(
     new Set(),
   );
-  const { runTests: runBamlTests } = useRunBamlTests();
+  const { runTests: runBamlTests, cancelTests } = useRunBamlTests();
   const selectedItem = useAtomValue(selectedItemAtom);
+  const areTestsRunning = useAtomValue(areTestsRunningAtom);
+  const testHistory = useAtomValue(testHistoryAtom);
+  const selectedIndex = useAtomValue(selectedHistoryIndexAtom);
+
+  const currentRun = testHistory[selectedIndex];
+
 
   const filteredFunctions = functions.filter(
     (func: FunctionData) =>
@@ -97,7 +110,7 @@ export function TestingSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 relative">
               <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                 <FlaskConical className="size-4" />
               </div>
@@ -105,9 +118,17 @@ export function TestingSidebar() {
                 <span className="font-medium">BAML Tests</span>
               </div>
             </div>
+            <div className='absolute right-0 top-0 xl:hidden'>
+              <SidebarTrigger />
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
         <SearchForm searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+        {/* <Button variant="ghost" size="sm" className='absolute right-0 top-0 xl:hidden' onClick={() => {
+          
+        }}>
+          <SidebarCloseIcon className="size-4 scale-x-[-1]" />
+        </Button> */}
       </SidebarHeader>
       <SidebarContent>
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -121,11 +142,21 @@ export function TestingSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={handleRunFilteredTests}
+                    onClick={() => {
+                      if (areTestsRunning) {
+                        cancelTests()
+                      } else {
+                        handleRunFilteredTests()
+                      }
+                    }}
                     className="flex justify-between items-center w-full cursor-pointer"
                   >
-                    <span>Run all tests</span>
-                    <Play className="w-3 h-3" />
+                    <span>{areTestsRunning ? 'Stop tests' : 'Run all tests'}</span>
+                    {areTestsRunning ? (
+                      <Square className="w-3 h-3 fill-red-500 stroke-red-500" />
+                    ) : (
+                      <Play className="w-3 h-3" />
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -152,58 +183,73 @@ export function TestingSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              {filteredFunctions.map((func) => (
-                <Collapsible
-                  key={func.name}
-                  open={openCollapsibles.has(func.name)}
-                  onOpenChange={() => handleToggleCollapsible(func.name)}
-                  className="group/collapsible"
-                >
-                  <SidebarMenuItem>
-                    <FunctionItem functionName={func.name} tests={func.tests} />
-                    {func.tests?.length > 0 && (
-                      <>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuAction className="bg-sidebar-accent text-sidebar-accent-foreground left-2 data-[state=open]:rotate-90 cursor-pointer">
-                            <ChevronRight />
-                          </SidebarMenuAction>
-                        </CollapsibleTrigger>
-                        <SidebarMenuAction
-                          className="cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const testsToRun = func.tests.map((test) => ({
-                              functionName: func.name,
-                              testName: test,
-                            }));
-                            runBamlTests(testsToRun);
-                          }}
-                        >
-                          <Play />
-                        </SidebarMenuAction>
-                      </>
-                    )}
-                    {func.tests?.length ? (
-                      <CollapsibleContent>
-                        <SidebarMenuSub className="pl-8 pr-0 mr-0">
-                          {func.tests.map((test) => (
-                            <TestItem
-                              key={test}
-                              label={test}
-                              isSelected={
-                                selectedItem?.[0] === func.name &&
-                                selectedItem?.[1] === test
+              {filteredFunctions.map((func) => {
+                // Check if any of this function's tests are running
+                const isFunctionRunning = currentRun?.tests.some(
+                  (test) => test.functionName === func.name && test.response.status === 'running'
+                ) ?? false;
+
+                return (
+                  <Collapsible
+                    key={func.name}
+                    open={openCollapsibles.has(func.name)}
+                    onOpenChange={() => handleToggleCollapsible(func.name)}
+                    className="group/collapsible"
+                  >
+                    <SidebarMenuItem>
+                      <FunctionItem functionName={func.name} tests={func.tests} />
+                      {func.tests?.length > 0 && (
+                        <>
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuAction className="bg-sidebar-accent text-sidebar-accent-foreground left-2 data-[state=open]:rotate-90 cursor-pointer">
+                              <ChevronRight />
+                            </SidebarMenuAction>
+                          </CollapsibleTrigger>
+                          <SidebarMenuAction
+                            className="cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isFunctionRunning) {
+                                cancelTests();
+                              } else {
+                                const testsToRun = func.tests.map((test) => ({
+                                  functionName: func.name,
+                                  testName: test,
+                                }));
+                                runBamlTests(testsToRun);
                               }
-                              searchTerm={searchTerm}
-                              functionName={func.name}
-                            />
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    ) : null}
-                  </SidebarMenuItem>
-                </Collapsible>
-              ))}
+                            }}
+                          >
+                            {isFunctionRunning ? (
+                              <Square className="fill-red-500 stroke-red-500" />
+                            ) : (
+                              <Play />
+                            )}
+                          </SidebarMenuAction>
+                        </>
+                      )}
+                      {func.tests?.length ? (
+                        <CollapsibleContent>
+                          <SidebarMenuSub className="pl-8 pr-0 mr-0">
+                            {func.tests.map((test) => (
+                              <TestItem
+                                key={test}
+                                label={test}
+                                isSelected={
+                                  selectedItem?.[0] === func.name &&
+                                  selectedItem?.[1] === test
+                                }
+                                searchTerm={searchTerm}
+                                functionName={func.name}
+                              />
+                            ))}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      ) : null}
+                    </SidebarMenuItem>
+                  </Collapsible>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroup>
         </div>
@@ -212,3 +258,4 @@ export function TestingSidebar() {
     </Sidebar>
   );
 }
+

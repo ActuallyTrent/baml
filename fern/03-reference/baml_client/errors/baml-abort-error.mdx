@@ -10,33 +10,36 @@ description: "Error thrown when a BAML operation is cancelled"
 ## Class Definition
 
 <Tabs>
-  <Tab title="TypeScript">
+  <Tab title="TypeScript" language="typescript">
     ```typescript
     export class BamlAbortError extends Error {
       public readonly name: string = 'BamlAbortError'
       public readonly reason?: any
+      public readonly detailed_message: string
       
-      constructor(message: string, reason?: any) {
+      constructor(message: string, reason?: any, detailed_message: string = '') {
         super(message)
         this.reason = reason
+        this.detailed_message = detailed_message
       }
     }
     ```
   </Tab>
   
-  <Tab title="Python">
+  <Tab title="Python" language="python">
     ```python
     class BamlAbortError(Exception):
         """Error raised when a BAML operation is aborted"""
         
-        def __init__(self, message: str, reason: Any = None):
+        def __init__(self, message: str, reason: Any = None, detailed_message: str = ''):
             super().__init__(message)
             self.reason = reason
+            self.detailed_message = detailed_message
             self.name = 'BamlAbortError'
     ```
   </Tab>
   
-  <Tab title="Go">
+  <Tab title="Go" language="go">
     ```go
     // In Go, cancellation is handled via context errors
     import (
@@ -54,15 +57,16 @@ description: "Error thrown when a BAML operation is cancelled"
     ```
   </Tab>
   
-  <Tab title="Ruby">
+  <Tab title="Ruby" language="ruby">
     ```ruby
     module Baml
       class AbortError < StandardError
-        attr_reader :reason
+        attr_reader :reason, :detailed_message
         
-        def initialize(message, reason = nil)
+        def initialize(message, reason = nil, detailed_message = '')
           super(message)
           @reason = reason
+          @detailed_message = detailed_message
         end
       end
     end
@@ -86,6 +90,11 @@ Optional additional context about the cancellation. This can be any value provid
 **Type**: `string`
 
 Always returns `"BamlAbortError"` for easy error type identification.
+
+### `detailed_message`
+**Type**: `string`
+
+Comprehensive error information that includes the complete history of all failed attempts when using fallback clients or retry policies. For abort errors, this typically contains the same information as `message` but may include additional debugging details about the cancellation context.
 
 ## Error Detection
 
@@ -261,7 +270,7 @@ async function retryableOperation(input: any, maxRetries: number = 3) {
 When streaming operations are cancelled, the error behavior differs slightly:
 
 <Tabs>
-  <Tab title="TypeScript">
+  <Tab title="TypeScript" language="typescript">
     ```typescript
     const controller = new AbortController()
     const stream = b.stream.FunctionName(input, {
@@ -284,7 +293,7 @@ When streaming operations are cancelled, the error behavior differs slightly:
     ```
   </Tab>
   
-  <Tab title="Python">
+  <Tab title="Python" language="python">
     ```python
     controller = AbortController()
     stream = b.stream.FunctionName(
@@ -363,7 +372,7 @@ for (let i = 0; i < 3; i++) {
 
 ## Related Documentation
 
-- [AbortController](/ref/baml_client/abort-controller) - API reference for abort controllers
+- [AbortController](/ref/baml_client/abort-signal) - API reference for abort controllers
 - [Error Overview](/ref/baml_client/errors/overview) - Complete error hierarchy
-- [User Guide: Abort Controllers](/guide/baml-basics/abort-controllers) - Learn how to use abort controllers
+- [User Guide: Abort Controllers](/guide/baml-basics/abort-signal) - Learn how to use abort controllers
 - [Error Handling Guide](/guide/baml-basics/error-handling) - General error handling patterns

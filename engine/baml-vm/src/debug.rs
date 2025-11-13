@@ -27,8 +27,10 @@ use std::io::IsTerminal;
 use colored::{Color, Colorize};
 
 use crate::{
-    vm::indexable::GlobalPool, EvalStack, Function, Instruction, Object, ObjectIndex, ObjectPool,
-    StackIndex, Value,
+    bytecode::Instruction,
+    indexable::{EvalStack, GlobalPool},
+    types::{Function, Object, Value},
+    ObjectIndex, ObjectPool, StackIndex,
 };
 
 /// Context aware instruction display.
@@ -55,6 +57,13 @@ pub fn display_instruction(
     let instruction = &function.bytecode.instructions[instruction_ptr as usize];
 
     let metadata = match instruction {
+        Instruction::NotifyBlock(block_index) => {
+            if let Some(notification) = function.block_notifications.get(*block_index) {
+                format!("({})", &notification.block_name)
+            } else {
+                format!("(invalid block index: {})", block_index)
+            }
+        }
         Instruction::LoadConst(index) => format!(
             "({})",
             display_value(&function.bytecode.constants[*index], objects)
@@ -62,7 +71,10 @@ pub fn display_instruction(
         Instruction::LoadGlobal(index) | Instruction::StoreGlobal(index) => {
             format!("({})", display_value(&globals[*index], objects))
         }
-        Instruction::LoadVar(index) | Instruction::StoreVar(index) => {
+        Instruction::LoadVar(index)
+        | Instruction::StoreVar(index)
+        | Instruction::Watch(index)
+        | Instruction::Notify(index) => {
             format!(
                 "({})",
                 function
@@ -103,9 +115,10 @@ pub fn display_instruction(
         Instruction::Jump(offset) | Instruction::JumpIfFalse(offset) => {
             format!("(to {})", instruction_ptr + offset)
         }
-        Instruction::AllocInstance(index) => {
+        Instruction::AllocInstance(index) | Instruction::AllocVariant(index) => {
             format!("({})", display_object(objects, *index))
         }
+
         Instruction::Pop(_)
         | Instruction::Copy(_)
         | Instruction::PopReplace(_)
@@ -113,7 +126,11 @@ pub fn display_instruction(
         | Instruction::CmpOp(_)
         | Instruction::UnaryOp(_)
         | Instruction::AllocArray(_)
+        | Instruction::AllocMap(_)
         | Instruction::LoadArrayElement
+        | Instruction::LoadMapElement
+        | Instruction::StoreArrayElement
+        | Instruction::StoreMapElement
         | Instruction::DispatchFuture(_)
         | Instruction::Await
         | Instruction::Call(_)
@@ -147,6 +164,11 @@ fn display_object(objects: &ObjectPool, index: ObjectIndex) -> String {
             other => format!("<{other} instance>"),
         },
 
+        Object::Variant(variant) => match &objects[variant.enm] {
+            Object::Enum(enm) => format!("<{} variant>", enm.name),
+            other => format!("<{other} variant>"),
+        },
+
         other => other.to_string(),
     }
 }
@@ -159,14 +181,18 @@ const COLUMN_MARGIN: usize = 3;
 /// Get color for instruction based on its type
 fn instruction_color(instruction: &Instruction) -> Color {
     match instruction {
+        Instruction::NotifyBlock(_) => Color::BrightYellow,
         Instruction::LoadConst(_)
         | Instruction::LoadVar(_)
         | Instruction::LoadGlobal(_)
         | Instruction::LoadField(_)
-        | Instruction::LoadArrayElement => Color::Blue,
-        Instruction::StoreVar(_) | Instruction::StoreGlobal(_) | Instruction::StoreField(_) => {
-            Color::Green
-        }
+        | Instruction::LoadArrayElement
+        | Instruction::LoadMapElement => Color::Blue,
+        Instruction::StoreVar(_)
+        | Instruction::StoreGlobal(_)
+        | Instruction::StoreField(_)
+        | Instruction::StoreArrayElement
+        | Instruction::StoreMapElement => Color::Green,
         Instruction::BinOp(_) | Instruction::CmpOp(_) | Instruction::UnaryOp(_) => {
             Color::BrightBlue
         }
@@ -177,8 +203,12 @@ fn instruction_color(instruction: &Instruction) -> Color {
         | Instruction::Pop(_)
         | Instruction::Copy(_)
         | Instruction::PopReplace(_) => Color::Red,
-        Instruction::AllocInstance(_) | Instruction::AllocArray(_) => Color::Cyan,
+        Instruction::AllocMap(_)
+        | Instruction::AllocInstance(_)
+        | Instruction::AllocVariant(_)
+        | Instruction::AllocArray(_) => Color::Cyan,
         Instruction::DispatchFuture(_) | Instruction::Await => Color::BrightGreen,
+        Instruction::Watch(_) | Instruction::Notify(_) => Color::BrightRed,
     }
 }
 
@@ -344,5 +374,5 @@ pub fn disassemble(
 
     let disassembly = display_bytecode(function, stack, objects, globals, use_colors);
 
-    println!("{disassembly}");
+    eprintln!("{disassembly}");
 }

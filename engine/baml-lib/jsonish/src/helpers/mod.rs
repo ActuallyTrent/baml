@@ -278,6 +278,7 @@ fn relevant_data_models<'a>(
 
                     classes.push(Class {
                         name: Name::new_with_alias(name.to_string(), walker?.alias(env_values)?),
+                        description: None,
                         namespace: *mode,
                         fields,
                         constraints: metadata.constraints.clone(),
@@ -298,6 +299,10 @@ fn relevant_data_models<'a>(
             TypeIR::Literal(_, _) => {}
             TypeIR::Primitive(_, _) => {}
             TypeIR::Arrow(_, _) => {}
+            TypeIR::Top(_) => panic!(
+                "TypeIR::Top should have been resolved by the compiler before code generation. \
+                 This indicates a bug in the type resolution phase."
+            ),
         }
     }
 

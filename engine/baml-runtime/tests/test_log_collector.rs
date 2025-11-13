@@ -7,7 +7,6 @@ mod internal_tests {
     use std::{any, collections::HashMap, sync::Once};
 
     // use baml_runtime::internal::llm_client::orchestrator::OrchestrationScope;
-    use baml_runtime::InternalRuntimeInterface;
     use baml_runtime::{
         internal::llm_client::LLMResponse,
         tracingv2::{
@@ -16,6 +15,7 @@ mod internal_tests {
         },
         BamlRuntime, DiagnosticsError, IRHelper,
     };
+    use baml_runtime::{InternalRuntimeInterface, TripWire};
     use baml_types::BamlValue;
     use internal_baml_core::FeatureFlags;
     use wasm_bindgen_test::*;
@@ -75,17 +75,14 @@ mod internal_tests {
         )?;
         log::info!("Runtime:");
 
-        let missing_env_vars = runtime.internal().ir().required_env_vars();
+        let missing_env_vars = runtime.ir.required_env_vars();
 
         let ctx_manager = runtime.create_ctx_manager(BamlValue::String("test".to_string()), None);
         let ctx = ctx_manager.create_ctx_with_default();
 
         let params = runtime.get_test_params(function_name, test_name, &ctx, true)?;
 
-        let render_prompt_future =
-            runtime
-                .internal()
-                .render_prompt(function_name, &ctx, &params, Some(0));
+        let render_prompt_future = runtime.render_prompt(function_name, &ctx, &params, Some(0));
 
         let (prompt, scope, _) = runtime.async_runtime.block_on(render_prompt_future)?;
 
@@ -100,6 +97,7 @@ mod internal_tests {
             Some(collectors),
             HashMap::new(),
             None,
+            TripWire::new(None),
         );
 
         let (res, function_span_id) = runtime.async_runtime.block_on(call_function_future);

@@ -29,10 +29,30 @@ def set_log_max_chunk_length(length: int) -> None:
 class AbortController:
     """Controller for cancelling BAML operations."""
 
-    def __init__(self) -> None: ...
-    def abort(self) -> None: ...
+    def __init__(self, timeout_ms: Optional[int] = None) -> None:
+        """
+        Creates a new abort controller with an optional timeout in milliseconds.
+        Once aborted, the AbortController will forever remain in an an aborted state.
+        The timeout will only start AFTER the object is passed to a BAML function.
+
+        Args:
+            timeout_ms: The timeout in milliseconds. If not provided, AbortController will not timeout.
+        """
+        ...
+
+    def abort(self) -> None:
+        """
+        Immediately abort all operations.
+        """
+        ...
+
     @property
-    def aborted(self) -> bool: ...
+    def aborted(self) -> bool:
+        """
+        Check the state of this controller.
+        Once aborted, the AbortController will forever remain in an an aborted state.
+        """
+        ...
 
 class FunctionResult:
     """The result of a BAML function call.
@@ -57,6 +77,7 @@ class FunctionResult:
         class_module: Any,
         partial_class_module: Any,
         allow_partials: bool,
+        runtime: BamlRuntime,
     ) -> Any: ...
 
     # This is a debug function that returns the internal representation of the response
@@ -154,6 +175,8 @@ class BamlRuntime:
         cr: Optional[ClientRegistry],
         collectors: List[Collector],
         env_vars: Dict[str, str],
+        tags: Optional[Dict[str, str]] = None,
+        abort_controller: Optional[AbortController] = None,
     ) -> FunctionResult: ...
     def call_function_sync(
         self,
@@ -164,6 +187,8 @@ class BamlRuntime:
         cr: Optional[ClientRegistry],
         collectors: List[Collector],
         env_vars: Dict[str, str],
+        tags: Optional[Dict[str, str]] = None,
+        abort_controller: Optional[AbortController] = None,
     ) -> FunctionResult: ...
     @staticmethod
     def from_files(
@@ -182,7 +207,8 @@ class BamlRuntime:
         cr: Optional[ClientRegistry],
         collectors: List[Collector],
         env_vars: Dict[str, str],
-        on_tick: Optional[Callable[[], None]],
+        tags: Optional[Dict[str, str]] = None,
+        on_tick: Optional[Callable[[], None]] = None,
     ) -> FunctionResultStream: ...
     def stream_function_sync(
         self,
@@ -194,7 +220,8 @@ class BamlRuntime:
         cr: Optional[ClientRegistry],
         collectors: List[Collector],
         env_vars: Dict[str, str],
-        on_tick: Optional[Callable[[], None]],
+        tags: Optional[Dict[str, str]] = None,
+        on_tick: Optional[Callable[[], None]] = None,
     ) -> SyncFunctionResultStream: ...
     def create_context_manager(self) -> RuntimeContextManager: ...
     def flush(self) -> None: ...
@@ -314,6 +341,7 @@ class Collector:
     @property
     def usage(self) -> Usage: ...
     def id(self, function_log_id: str) -> Optional[FunctionLog]: ...
+    def clear(self) -> None: ...
     # For debugging
     @staticmethod
     def __function_call_count() -> int: ...
@@ -341,6 +369,8 @@ class FunctionLog:
     def raw_llm_response(self) -> Optional[str]: ...
     @property
     def metadata(self) -> Dict[str, Any]: ...
+    @property
+    def tags(self) -> Dict[str, Any]: ...
     @property
     def selected_call(self) -> Optional[Union[LLMCall, LLMStreamCall]]: ...
 
@@ -388,8 +418,7 @@ class LLMStreamCall:
     def http_response(self) -> Optional[HTTPResponse]: ...
     @property
     def usage(self) -> Usage: ...
-    @property
-    def timing(self) -> Timing: ...
+
     @property
     def provider(self) -> str: ...
 
@@ -413,6 +442,8 @@ class Usage:
     def input_tokens(self) -> Optional[int]: ...
     @property
     def output_tokens(self) -> Optional[int]: ...
+    @property
+    def cached_input_tokens(self) -> Optional[int]: ...
 
 class Timing:
     def __init__(
@@ -528,5 +559,10 @@ class BamlClientError(BamlError):
 
 class BamlClientHttpError(BamlClientError):
     """Raised for HTTP-related client errors."""
+
+    ...
+
+class BamlAbortError(BamlError):
+    """Raised when a BAML operation is cancelled (abort)."""
 
     ...

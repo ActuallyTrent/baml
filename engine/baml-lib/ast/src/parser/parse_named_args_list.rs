@@ -2,12 +2,11 @@ use internal_baml_diagnostics::DatamodelError; // Add this line
 use internal_baml_diagnostics::{Diagnostics, Span};
 
 use super::{
-    helpers::{parsing_catch_all, Pair},
+    helpers::{assert_correct_parser, parsing_catch_all, Pair},
     parse_field::parse_field_type_chain,
     parse_identifier::parse_identifier,
 };
 use crate::{
-    assert_correct_parser,
     ast::{BlockArg, BlockArgs, FieldArity, FieldType, Identifier, WithName, WithSpan},
     parser::Rule,
 };
@@ -29,7 +28,7 @@ pub(crate) fn parse_named_argument_list(
         }
         if named_arg.as_rule() == Rule::named_argument || named_arg.as_rule() == Rule::openParen {
             // TODO: THIS IS SUSPECT
-            assert_correct_parser!(named_arg, named_arg.as_rule());
+            assert_correct_parser(&named_arg, &[named_arg.as_rule()], diagnostics);
         }
         // TODO: THIS IS SUSPECT
         // assert_correct_parser!(named_arg, Rule::named_argument);
@@ -40,7 +39,7 @@ pub(crate) fn parse_named_argument_list(
 
         let mut name = None;
         let mut r#type = None;
-        let mut is_mutable = false;
+        let is_mutable = true; // Always mutable now after mut keyword removal
         let mut is_self = false;
         for arg in named_arg.into_inner() {
             match arg.as_rule() {
@@ -53,7 +52,6 @@ pub(crate) fn parse_named_argument_list(
 
                     name = Some(ident);
                 }
-                Rule::MUT_KEYWORD => is_mutable = true,
                 Rule::COLON => {}
                 Rule::field_type | Rule::field_type_chain => {
                     match parse_function_arg(arg, is_mutable, diagnostics) {
@@ -61,7 +59,7 @@ pub(crate) fn parse_named_argument_list(
                         Err(e) => diagnostics.push_error(e),
                     }
                 }
-                _ => parsing_catch_all(arg, "named_argument_list"),
+                _ => parsing_catch_all(arg, "named_argument_list", diagnostics),
             }
         }
 

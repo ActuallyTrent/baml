@@ -1,10 +1,10 @@
-fn Factorial(mut limit: int) -> int {
+function Factorial(limit: int) -> int {
 
-	let mut result = 1;
+	let result = 1;
 
 
     // used to make the loop break without relying on `break` implementation.
-    let mut should_continue = true;
+    let should_continue = true;
 	while (should_continue) {
 		result = result * limit;
 		limit = limit - 1;
@@ -20,7 +20,7 @@ fn Factorial(mut limit: int) -> int {
 	result
 }
 
-fn ContinueNested() -> int {
+function ContinueNested() -> int {
     while (true) {
         while (true) {
             continue;
@@ -29,8 +29,8 @@ fn ContinueNested() -> int {
 }
 
 // function Factorial(limit) {
-//   var result = 1;
-//   var should_continue = true;
+//   let result = 1;
+//   let should_continue = true;
 //   while should_continue {
 //   result = result * limit;
 //     limit = limit - 1;
@@ -50,14 +50,4 @@ fn ContinueNested() -> int {
 //     continue;
 //     }
 //   }
-// }
-//
-// class std::Request {
-//   base_url: string
-//   headers: map<string, string>
-//   query_params: map<string, string>
-// }
-//
-// enum std::HttpMethod {
-//   Get
 // }

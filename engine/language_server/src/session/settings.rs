@@ -2,23 +2,37 @@ use std::path::PathBuf;
 
 use lsp_types::Url;
 use rustc_hash::FxHashMap;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Maps a workspace URI to its associated client settings. Used during server initialization.
 pub(crate) type WorkspaceSettingsMap = FxHashMap<Url, ClientSettings>;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Serialize)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 #[serde(rename_all = "camelCase")]
 pub struct BamlSettings {
     pub(crate) cli_path: Option<String>,
     pub(crate) generate_code_on_save: Option<String>,
-    #[serde(default = "default_enable_playground")]
-    pub enable_playground: bool,
-    pub playground_port: Option<u16>,
     #[serde(default = "default_feature_flags")]
     pub(crate) feature_flags: Option<Vec<String>>,
     pub(crate) client_version: Option<String>,
+    #[serde(default)]
+    pub(crate) enable_playground_proxy: Option<bool>,
+    /// When the language server receives a request or sends a notification to the IDE,
+    /// it will also forward them to the webview if they're present in this list.
+    ///
+    /// We do this because we expect users to run evergreen extensions, but old language
+    /// servers, so this will allow us to keep configuration in the extension as much as
+    /// possible.
+    ///
+    /// Currently, this is used to forward 'runtime_updated' to the webview in both
+    /// Jetbrains and Zed, and 'textDocument/codeAction' to the webview in Zed for cursor
+    /// updates.
+    ///
+    /// Note that this cannot be updated via vscode settings, as it is read on
+    /// initialization in the language server.
+    #[serde(default)]
+    pub(crate) lsp_methods_to_forward_to_webview: Option<Vec<String>>,
 }
 
 impl Default for BamlSettings {
@@ -26,10 +40,10 @@ impl Default for BamlSettings {
         BamlSettings {
             cli_path: None,
             generate_code_on_save: None,
-            enable_playground: false,
-            playground_port: None,
             feature_flags: Some(vec!["beta".to_string()]),
             client_version: None,
+            enable_playground_proxy: Some(true),
+            lsp_methods_to_forward_to_webview: None,
         }
     }
 }
@@ -45,10 +59,6 @@ impl BamlSettings {
     pub fn get_client_version(&self) -> Option<&str> {
         self.client_version.as_ref().map(AsRef::as_ref)
     }
-}
-
-fn default_enable_playground() -> bool {
-    true
 }
 
 fn default_feature_flags() -> Option<Vec<String>> {

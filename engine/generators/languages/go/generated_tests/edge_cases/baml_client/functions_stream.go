@@ -68,6 +68,10 @@ func (*stream) TestCircularReference(ctx context.Context, input string, opts ...
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -83,40 +87,32 @@ func (*stream) TestCircularReference(ctx context.Context, input string, opts ...
 
 	channel := make(chan StreamValue[stream_types.CircularReference, types.CircularReference])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.CircularReference, types.CircularReference]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.CircularReference)
+				channel <- StreamValue[stream_types.CircularReference, types.CircularReference]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.CircularReference, types.CircularReference]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.CircularReference)
-					channel <- StreamValue[stream_types.CircularReference, types.CircularReference]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.CircularReference)
-					channel <- StreamValue[stream_types.CircularReference, types.CircularReference]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.CircularReference)
+				channel <- StreamValue[stream_types.CircularReference, types.CircularReference]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }
@@ -146,6 +142,10 @@ func (*stream) TestDeepRecursion(ctx context.Context, depth int64, opts ...CallO
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -161,40 +161,32 @@ func (*stream) TestDeepRecursion(ctx context.Context, depth int64, opts ...CallO
 
 	channel := make(chan StreamValue[stream_types.DeepRecursion, types.DeepRecursion])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.DeepRecursion, types.DeepRecursion]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.DeepRecursion)
+				channel <- StreamValue[stream_types.DeepRecursion, types.DeepRecursion]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.DeepRecursion, types.DeepRecursion]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.DeepRecursion)
-					channel <- StreamValue[stream_types.DeepRecursion, types.DeepRecursion]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.DeepRecursion)
-					channel <- StreamValue[stream_types.DeepRecursion, types.DeepRecursion]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.DeepRecursion)
+				channel <- StreamValue[stream_types.DeepRecursion, types.DeepRecursion]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }
@@ -224,6 +216,10 @@ func (*stream) TestEmptyCollections(ctx context.Context, input string, opts ...C
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -239,40 +235,32 @@ func (*stream) TestEmptyCollections(ctx context.Context, input string, opts ...C
 
 	channel := make(chan StreamValue[stream_types.EmptyCollections, types.EmptyCollections])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.EmptyCollections, types.EmptyCollections]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.EmptyCollections)
+				channel <- StreamValue[stream_types.EmptyCollections, types.EmptyCollections]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.EmptyCollections, types.EmptyCollections]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.EmptyCollections)
-					channel <- StreamValue[stream_types.EmptyCollections, types.EmptyCollections]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.EmptyCollections)
-					channel <- StreamValue[stream_types.EmptyCollections, types.EmptyCollections]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.EmptyCollections)
+				channel <- StreamValue[stream_types.EmptyCollections, types.EmptyCollections]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }
@@ -302,6 +290,10 @@ func (*stream) TestLargeStructure(ctx context.Context, input string, opts ...Cal
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -317,40 +309,32 @@ func (*stream) TestLargeStructure(ctx context.Context, input string, opts ...Cal
 
 	channel := make(chan StreamValue[stream_types.LargeStructure, types.LargeStructure])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.LargeStructure, types.LargeStructure]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.LargeStructure)
+				channel <- StreamValue[stream_types.LargeStructure, types.LargeStructure]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.LargeStructure, types.LargeStructure]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.LargeStructure)
-					channel <- StreamValue[stream_types.LargeStructure, types.LargeStructure]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.LargeStructure)
-					channel <- StreamValue[stream_types.LargeStructure, types.LargeStructure]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.LargeStructure)
+				channel <- StreamValue[stream_types.LargeStructure, types.LargeStructure]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }
@@ -380,6 +364,10 @@ func (*stream) TestNumberEdgeCases(ctx context.Context, input string, opts ...Ca
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -395,40 +383,32 @@ func (*stream) TestNumberEdgeCases(ctx context.Context, input string, opts ...Ca
 
 	channel := make(chan StreamValue[stream_types.NumberEdgeCases, types.NumberEdgeCases])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.NumberEdgeCases, types.NumberEdgeCases]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.NumberEdgeCases)
+				channel <- StreamValue[stream_types.NumberEdgeCases, types.NumberEdgeCases]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.NumberEdgeCases, types.NumberEdgeCases]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.NumberEdgeCases)
-					channel <- StreamValue[stream_types.NumberEdgeCases, types.NumberEdgeCases]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.NumberEdgeCases)
-					channel <- StreamValue[stream_types.NumberEdgeCases, types.NumberEdgeCases]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.NumberEdgeCases)
+				channel <- StreamValue[stream_types.NumberEdgeCases, types.NumberEdgeCases]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }
@@ -458,6 +438,10 @@ func (*stream) TestSpecialCharacters(ctx context.Context, input string, opts ...
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -473,40 +457,32 @@ func (*stream) TestSpecialCharacters(ctx context.Context, input string, opts ...
 
 	channel := make(chan StreamValue[stream_types.SpecialCharacters, types.SpecialCharacters])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.SpecialCharacters, types.SpecialCharacters]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.SpecialCharacters)
+				channel <- StreamValue[stream_types.SpecialCharacters, types.SpecialCharacters]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.SpecialCharacters, types.SpecialCharacters]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.SpecialCharacters)
-					channel <- StreamValue[stream_types.SpecialCharacters, types.SpecialCharacters]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.SpecialCharacters)
-					channel <- StreamValue[stream_types.SpecialCharacters, types.SpecialCharacters]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.SpecialCharacters)
+				channel <- StreamValue[stream_types.SpecialCharacters, types.SpecialCharacters]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }

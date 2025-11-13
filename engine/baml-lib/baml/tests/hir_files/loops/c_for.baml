@@ -1,34 +1,34 @@
-fn SumToTen() -> int {
-	let mut s = 0;
+function SumToTen() -> int {
+	let s = 0;
 
-	for (let mut i = 1; i <= 10; i += 1) {
+	for (let i = 1; i <= 10; i += 1) {
 		s += i;
 	}
 
 	s
 }
 
-fn NoCondition() -> int {
-	let mut s = 0;
+function NoCondition() -> int {
+	let s = 0;
 
-	for (let mut i = 0; ; s += i) {
+	for (let i = 0; ; s += i) {
 	}
 
 	s
 }
 
-fn NoAfter() -> int {
-	let mut s = 0;
+function NoAfter() -> int {
+	let s = 0;
 
-	for (let mut i = 0; i <= 10;) {
+	for (let i = 0; i <= 10;) {
 	}
 
 	s
 }
 
 
-fn OnlyCond() -> int {
-	let mut s = 0;
+function OnlyCond() -> int {
+	let s = 0;
 
 	for (; false;) {
 	}
@@ -36,9 +36,9 @@ fn OnlyCond() -> int {
 	s
 }
 
- 
-fn Nothing() -> int {
-	let mut s = 0;
+
+function Nothing() -> int {
+	let s = 0;
 
 	for (;;) {
 	}
@@ -47,9 +47,9 @@ fn Nothing() -> int {
 }
 
 // function SumToTen() {
-//   var s = 0;
+//   let s = 0;
 //   {
-//   var i = 1;
+//   let i = 1;
 //     for (;i <= 10;i += 1;) { s += i;}
 //   }
 //
@@ -57,9 +57,9 @@ fn Nothing() -> int {
 // }
 //
 // function NoCondition() {
-//   var s = 0;
+//   let s = 0;
 //   {
-//   var i = 0;
+//   let i = 0;
 //     for (;;s += i;) { }
 //   }
 //
@@ -67,9 +67,9 @@ fn Nothing() -> int {
 // }
 //
 // function NoAfter() {
-//   var s = 0;
+//   let s = 0;
 //   {
-//   var i = 0;
+//   let i = 0;
 //     while i <= 10 {
 //     
 //     }
@@ -79,7 +79,7 @@ fn Nothing() -> int {
 // }
 //
 // function OnlyCond() {
-//   var s = 0;
+//   let s = 0;
 //   while false {
 //   
 //   }
@@ -88,18 +88,8 @@ fn Nothing() -> int {
 // }
 //
 // function Nothing() {
-//   var s = 0;
+//   let s = 0;
 //   for (;;) { }
 //
 //   s
-// }
-//
-// class std::Request {
-//   base_url: string
-//   headers: map<string, string>
-//   query_params: map<string, string>
-// }
-//
-// enum std::HttpMethod {
-//   Get
 // }

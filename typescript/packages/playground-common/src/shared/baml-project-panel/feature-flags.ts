@@ -1,15 +1,24 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
+import { sessionStore } from '../../baml_wasm_web/JotaiProvider';
+
+const betaDefaultValue = ('').toLowerCase();
+const betaDefaults = ['1', 'true', 'yes', 'on'];
+const defaultStandaloneFlags = betaDefaults.includes(betaDefaultValue) ? ['beta'] : [];
 
 // Feature flags atom for standalone playground
-export const standaloneFeatureFlagsAtom = atomWithStorage<string[]>('baml-feature-flags', []);
+export const standaloneFeatureFlagsAtom = atomWithStorage<string[]>(
+  'baml-feature-flags',
+  defaultStandaloneFlags,
+  sessionStore,
+);
 
-// Beta feature flag convenience atom for standalone use
-export const betaFeatureEnabledAtom = atom(
+// Beta feature flag convenience atom for standalone use (with setter)
+export const standaloneBetaFeatureEnabledAtom = atom(
   (get) => get(standaloneFeatureFlagsAtom).includes('beta'),
   (get, set, enabled: boolean) => {
     const currentFlags = get(standaloneFeatureFlagsAtom);
-    const updatedFlags = enabled 
+    const updatedFlags = enabled
       ? [...currentFlags.filter(flag => flag !== 'beta'), 'beta']
       : currentFlags.filter(flag => flag !== 'beta');
     set(standaloneFeatureFlagsAtom, updatedFlags);

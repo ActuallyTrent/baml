@@ -14,7 +14,7 @@ pub(crate) struct DidChangeConfiguration;
 /// Republishes diagnostics for all projects when feature flags change
 fn republish_all_diagnostics(notifier: &Notifier, session: &mut Session) {
     let projects = session.baml_src_projects.clone();
-    let projects_guard = projects.lock().unwrap();
+    let projects_guard = projects.lock();
 
     let default_flags = vec!["beta".to_string()];
     let effective_flags = session
@@ -48,7 +48,7 @@ impl super::NotificationHandler for DidChangeConfiguration {
 
 impl super::SyncNotificationHandler for DidChangeConfiguration {
     fn run(
-        _session: &mut Session,
+        session: &mut Session,
         notifier: Notifier,
         requester: &mut Requester,
         params: types::DidChangeConfigurationParams,
@@ -70,23 +70,17 @@ impl super::SyncNotificationHandler for DidChangeConfiguration {
 
                 // Send the BAML settings as a notification
                 notifier
-                    .0
-                    .send(lsp_server::Message::Notification(
-                        lsp_server::Notification::new(
-                            "baml_settings_updated".to_string(),
-                            baml_settings.clone(),
-                        ),
-                    ))
+                    .notify_raw("baml_settings_updated".to_string(), baml_settings.clone())
                     .internal_error()?;
                 tracing::info!("Sent baml_settings_updated notification");
-                let feature_flags_changed = _session.update_baml_settings(baml_settings.clone());
+                let feature_flags_changed = session.update_baml_settings(baml_settings.clone());
 
                 // Republish diagnostics if feature flags changed
                 if feature_flags_changed {
                     tracing::info!(
                         "Feature flags changed, republishing diagnostics for all projects"
                     );
-                    republish_all_diagnostics(&notifier, _session);
+                    republish_all_diagnostics(&notifier, session);
                 }
             }
         }

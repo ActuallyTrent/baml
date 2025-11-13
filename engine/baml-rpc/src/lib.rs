@@ -21,14 +21,19 @@ pub use s3::S3UploadMetadata;
 pub use ui::{
     ui_baml_src::{GetBamlSrcBundle, GetBamlSrcBundleRequest, GetBamlSrcBundleResponse},
     ui_control_plane_orgs::{
-        CreateOrganization, CreateOrganizationRequest, CreateOrganizationResponse, GetOrganization,
-        GetOrganizationRequest, GetOrganizationResponse, Organization, UpdateOrganization,
+        CreateOrganization, CreateOrganizationRequest, CreateOrganizationResponse,
+        DeleteOrganization, DeleteOrganizationRequest, DeleteOrganizationResponse, GetOrganization,
+        GetOrganizationRequest, GetOrganizationResponse, Organization, SyncStripeSubscription,
+        SyncStripeSubscriptionRequest, SyncStripeSubscriptionResponse, UpdateOrganization,
         UpdateOrganizationRequest, UpdateOrganizationResponse,
     },
     ui_control_plane_projects::{
         CreateProject, CreateProjectRequest, CreateProjectResponse, ListProjects,
         ListProjectsRequest, ListProjectsResponse, Project, UpdateProject, UpdateProjectRequest,
         UpdateProjectResponse,
+    },
+    ui_function_call_http_calls::{
+        GetFunctionCallHttpCalls, GetFunctionCallHttpCallsRequest, GetFunctionCallHttpCallsResponse,
     },
     ui_function_calls::{ListFunctionCalls, ListFunctionCallsRequest, ListFunctionCallsResponse},
 };

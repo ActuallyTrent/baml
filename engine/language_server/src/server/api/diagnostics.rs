@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
 use baml_runtime::InternalRuntimeInterface;
@@ -10,6 +10,7 @@ use lsp_server::{ErrorCode, Notification, Request};
 use lsp_types::{
     notification::PublishDiagnostics, Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams, Url,
 };
+use parking_lot::Mutex;
 
 use super::LSPResult;
 use crate::{
@@ -73,14 +74,13 @@ pub fn publish_diagnostics(
     tracing::info!("sending status bar diagnostics");
     // Update status bar
     notifier
-        .0
-        .send(lsp_server::Message::Notification(Notification::new(
+        .notify_raw(
             "runtime_diagnostics".to_string(),
             serde_json::json!({
                 "errors": error_count,
                 "warnings": warning_count,
             }),
-        )))
+        )
         .internal_error()?;
 
     Ok(())
@@ -95,13 +95,13 @@ pub fn publish_session_lsp_diagnostics(
 ) -> Result<()> {
     // let keys = session.index().documents.keys();
     let path = file_url.to_file_path().unwrap_or_default();
-    if !file_url.to_string().contains("baml_src") {
+    let Ok(project) = session.get_or_create_project(&path) else {
+        tracing::info!(
+            "BAML file not in baml_src directory, not publishing diagnostics: {}",
+            file_url
+        );
         return Ok(());
-    }
-    tracing::info!("publishing diagnostics for {}", file_url);
-    let project = session
-        .get_or_create_project(&path)
-        .expect("We just ensured the session is valid.");
+    };
 
     let default_flags = vec!["beta".to_string()];
     let feature_flags = session
@@ -136,12 +136,12 @@ pub fn project_diagnostics(
         "project_diagnostics called with feature_flags: {:?}",
         feature_flags
     );
-    let mut guard = project.lock().unwrap();
+    let mut guard = project.lock();
     let root_path = PathBuf::from(guard.root_path());
     let fake_env = HashMap::new();
     let baml_diagnostics = match guard.baml_project.runtime(fake_env, feature_flags) {
         Ok(runtime) => {
-            runtime.internal().diagnostics().clone()
+            runtime.diagnostics().clone()
             // Diagnostics::new(PathBuf::from("/fake1"))
         }
         Err(err) => err,
@@ -267,9 +267,7 @@ pub fn project_diagnostics(
     }
 
     // Check for generator version mismatch as well.
-    if let Err(message) = guard
-        .get_common_generator_version(feature_flags, session.baml_settings.get_client_version())
-    {
+    if let Err(message) = guard.get_common_generator_version() {
         // Add the diagnostic to all generators
         if let Ok(generators) = guard.list_generators(feature_flags) {
             // Need to list generators again to get their spans
@@ -324,11 +322,11 @@ pub fn file_diagnostics(
         file_url,
         feature_flags
     );
-    let mut guard = project.lock().unwrap();
+    let mut guard = project.lock();
     let root_path = PathBuf::from(guard.root_path());
     let fake_env = HashMap::new();
     let baml_diagnostics = match guard.baml_project.runtime(fake_env, feature_flags) {
-        Ok(runtime) => runtime.internal().diagnostics().clone(),
+        Ok(runtime) => runtime.diagnostics().clone(),
         Err(err) => err,
     };
 
@@ -459,4 +457,28 @@ fn ensure_absolute(project_root: &Path, file_path: &Path) -> PathBuf {
     } else {
         project_root.join(file_path_relative)
     }
+}
+
+/// Creates an error diagnostic for BAML files outside baml_src directories
+pub fn not_in_baml_src_diagnostic(file_url: &Url) -> lsp_types::PublishDiagnosticsParams {
+    let range = lsp_types::Range::new(
+        lsp_types::Position::new(0, 0),
+        // Choose a position reasonably likely to be either at or past the end of the file.
+        // IDEs should correctly defend against this, ideally clamping it to the end of the file.
+        lsp_types::Position::new(10_000, 0),
+    );
+
+    lsp_types::PublishDiagnosticsParams {
+                        uri: file_url.clone(),
+                        diagnostics: vec![lsp_types::Diagnostic::new(
+            range,
+            Some(lsp_types::DiagnosticSeverity::ERROR),
+            None,
+            None,
+            "BAML files must be placed in a baml_src/ directory, see https://docs.boundaryml.com/guide/introduction/baml_src.".to_string(),
+            None,
+            None,
+        )],
+                        version: None,
+                    }
 }

@@ -1,16 +1,16 @@
-let x = if (true) {
-    1
-} else {
-    2
-};
+function A() -> int {
 
-// warning: Variable assignment is experimental, and will break in the future.
-//   -->  expr/if.baml:1
-//    | 
-//    | 
-//  1 | let x = if (true) {
-//  2 |     1
-//  3 | } else {
-//  4 |     2
-//  5 | };
-//    | 
+    let x = if (true) {
+        1
+    } else {
+        2
+    };
+
+    if (true) {
+      x = 10;
+    } else {
+      x = 20;
+    };
+
+    0
+}

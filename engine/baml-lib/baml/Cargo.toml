@@ -24,8 +24,10 @@ base64.workspace = true
 dissimilar.workspace = true
 expect-test.workspace = true
 env_logger.workspace = true
+log.workspace = true
 indoc.workspace = true
 either.workspace = true
 strip-ansi-escapes.workspace = true
 baml-compiler = { path = "../../baml-compiler" }
+internal-baml-core = { path = "../baml-core" }
 baml-vm = { path = "../../baml-vm" }

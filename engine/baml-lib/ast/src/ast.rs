@@ -21,10 +21,13 @@ mod traits;
 mod type_builder_block;
 mod type_expression_block;
 mod value_expression_block;
+
+mod baml_vis;
 pub use app::App;
 pub use argument::{Argument, ArgumentId, ArgumentsList};
 pub use assignment::Assignment;
 pub use attribute::{Attribute, AttributeContainer, AttributeId};
+pub use baml_vis::{diagram_generator, mermaid_debug::MermaidDiagramGenerator};
 pub use config::ConfigBlockProperty;
 pub use expr::{ExprFn, TopLevelAssignment};
 pub use expression::{
@@ -37,8 +40,9 @@ pub use indentation_type::IndentationType;
 pub use internal_baml_diagnostics::Span;
 pub use newline_type::NewlineType;
 pub use stmt::{
-    AssertStmt, AssignOp, AssignOpStmt, AssignStmt, CForLoopStmt, ForLoopStmt, LetStmt, ReturnStmt,
-    Stmt, WhileStmt,
+    AssertStmt, AssignOp, AssignOpStmt, AssignStmt, BreakStmt, CForLoopStmt, ContinueStmt,
+    ExprStmt, ForLoopStmt, Header, LetStmt, ReturnStmt, Stmt, WatchNotifyStmt, WatchOptionsStmt,
+    WhileStmt,
 };
 pub use template_string::TemplateString;
 pub use top::Top;
@@ -100,6 +104,18 @@ pub struct TypeExpId(u32);
 impl From<u32> for TypeExpId {
     fn from(id: u32) -> Self {
         TypeExpId(id)
+    }
+}
+
+impl From<u32> for ValExpId {
+    fn from(id: u32) -> Self {
+        ValExpId(id)
+    }
+}
+
+impl From<u32> for ExprFnId {
+    fn from(id: u32) -> Self {
+        ExprFnId(id)
     }
 }
 
@@ -255,6 +271,13 @@ impl TopId {
     pub fn as_client_id(self) -> Option<ValExpId> {
         match self {
             TopId::Client(id) => Some(id),
+            _ => None,
+        }
+    }
+
+    pub fn as_generator_id(self) -> Option<ValExpId> {
+        match self {
+            TopId::Generator(id) => Some(id),
             _ => None,
         }
     }

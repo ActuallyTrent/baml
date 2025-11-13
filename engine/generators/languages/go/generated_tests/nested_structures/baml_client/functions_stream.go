@@ -68,6 +68,10 @@ func (*stream) TestComplexNested(ctx context.Context, input string, opts ...Call
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -83,40 +87,32 @@ func (*stream) TestComplexNested(ctx context.Context, input string, opts ...Call
 
 	channel := make(chan StreamValue[stream_types.ComplexNested, types.ComplexNested])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.ComplexNested, types.ComplexNested]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.ComplexNested)
+				channel <- StreamValue[stream_types.ComplexNested, types.ComplexNested]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.ComplexNested, types.ComplexNested]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.ComplexNested)
-					channel <- StreamValue[stream_types.ComplexNested, types.ComplexNested]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.ComplexNested)
-					channel <- StreamValue[stream_types.ComplexNested, types.ComplexNested]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.ComplexNested)
+				channel <- StreamValue[stream_types.ComplexNested, types.ComplexNested]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }
@@ -146,6 +142,10 @@ func (*stream) TestDeeplyNested(ctx context.Context, input string, opts ...CallO
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -161,40 +161,32 @@ func (*stream) TestDeeplyNested(ctx context.Context, input string, opts ...CallO
 
 	channel := make(chan StreamValue[stream_types.DeeplyNested, types.DeeplyNested])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.DeeplyNested, types.DeeplyNested]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.DeeplyNested)
+				channel <- StreamValue[stream_types.DeeplyNested, types.DeeplyNested]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.DeeplyNested, types.DeeplyNested]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.DeeplyNested)
-					channel <- StreamValue[stream_types.DeeplyNested, types.DeeplyNested]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.DeeplyNested)
-					channel <- StreamValue[stream_types.DeeplyNested, types.DeeplyNested]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.DeeplyNested)
+				channel <- StreamValue[stream_types.DeeplyNested, types.DeeplyNested]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }
@@ -224,6 +216,10 @@ func (*stream) TestRecursiveStructure(ctx context.Context, input string, opts ..
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -239,40 +235,32 @@ func (*stream) TestRecursiveStructure(ctx context.Context, input string, opts ..
 
 	channel := make(chan StreamValue[stream_types.RecursiveStructure, types.RecursiveStructure])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.RecursiveStructure, types.RecursiveStructure]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.RecursiveStructure)
+				channel <- StreamValue[stream_types.RecursiveStructure, types.RecursiveStructure]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.RecursiveStructure, types.RecursiveStructure]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.RecursiveStructure)
-					channel <- StreamValue[stream_types.RecursiveStructure, types.RecursiveStructure]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.RecursiveStructure)
-					channel <- StreamValue[stream_types.RecursiveStructure, types.RecursiveStructure]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.RecursiveStructure)
+				channel <- StreamValue[stream_types.RecursiveStructure, types.RecursiveStructure]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }
@@ -302,6 +290,10 @@ func (*stream) TestSimpleNested(ctx context.Context, input string, opts ...CallO
 		args.TypeBuilder = callOpts.typeBuilder
 	}
 
+	if callOpts.tags != nil {
+		args.Tags = callOpts.tags
+	}
+
 	encoded, err := args.Encode()
 	if err != nil {
 		// This should never happen. if it does, please file an issue at https://github.com/boundaryml/baml/issues
@@ -317,40 +309,32 @@ func (*stream) TestSimpleNested(ctx context.Context, input string, opts ...CallO
 
 	channel := make(chan StreamValue[stream_types.SimpleNested, types.SimpleNested])
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
+		for result := range internal_channel {
+			if result.Error != nil {
+				channel <- StreamValue[stream_types.SimpleNested, types.SimpleNested]{
+					IsError: true,
+					Error:   result.Error,
+				}
 				close(channel)
 				return
-			case result, ok := <-internal_channel:
-				if !ok {
-					// channel closed for some reason
-					close(channel)
-					return
+			}
+			if result.HasData {
+				data := (result.Data).(types.SimpleNested)
+				channel <- StreamValue[stream_types.SimpleNested, types.SimpleNested]{
+					IsFinal:  true,
+					as_final: &data,
 				}
-				if result.Error != nil {
-					channel <- StreamValue[stream_types.SimpleNested, types.SimpleNested]{
-						IsError: true,
-						Error:   result.Error,
-					}
-					close(channel)
-					return
-				}
-				if result.HasData {
-					data := (result.Data).(types.SimpleNested)
-					channel <- StreamValue[stream_types.SimpleNested, types.SimpleNested]{
-						IsFinal:  true,
-						as_final: &data,
-					}
-				} else {
-					data := (result.StreamData).(stream_types.SimpleNested)
-					channel <- StreamValue[stream_types.SimpleNested, types.SimpleNested]{
-						IsFinal:   false,
-						as_stream: &data,
-					}
+			} else {
+				data := (result.StreamData).(stream_types.SimpleNested)
+				channel <- StreamValue[stream_types.SimpleNested, types.SimpleNested]{
+					IsFinal:   false,
+					as_stream: &data,
 				}
 			}
 		}
+
+		// when internal_channel is closed, close the output too
+		close(channel)
 	}()
 	return channel, nil
 }

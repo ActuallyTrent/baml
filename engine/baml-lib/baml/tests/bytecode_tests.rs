@@ -89,7 +89,7 @@ fn get_bytecode_output(content: &str) -> Result<String, String> {
                         output.push_str(&format!("Function: {}\n", func.name));
                         output.push_str(&baml_vm::debug::display_bytecode(
                             func,
-                            &baml_vm::EvalStack::default(),
+                            &baml_vm::EvalStack::new(),
                             &objects,
                             &globals,
                             false, // no colors for golden tests
@@ -103,9 +103,18 @@ fn get_bytecode_output(content: &str) -> Result<String, String> {
                             class.field_names.len()
                         ));
                     }
+                    baml_vm::Object::Enum(enm) => {
+                        output.push_str(&format!("Enum {}\n", enm.name));
+                    }
                     baml_vm::Object::Instance(instance) => {
                         output
                             .push_str(&format!("Instance with {} fields\n", instance.fields.len()));
+                    }
+                    baml_vm::Object::Variant(variant) => {
+                        output.push_str(&format!(
+                            "Variant {} of Enum {}\n",
+                            variant.index, variant.enm
+                        ));
                     }
                     baml_vm::Object::String(s) => {
                         output.push_str(&format!("String: {s:?}\n"));
@@ -113,9 +122,17 @@ fn get_bytecode_output(content: &str) -> Result<String, String> {
                     baml_vm::Object::Array(arr) => {
                         output.push_str(&format!("Array with {} elements\n", arr.len()));
                     }
-
                     baml_vm::Object::Future(_) => {
                         output.push_str("Future\n");
+                    }
+                    baml_vm::Object::Map(index_map) => {
+                        output.push_str(&format!("Map with {} elements\n", index_map.len()));
+                    }
+                    baml_vm::Object::Media(_) => {
+                        output.push_str("Media\n");
+                    }
+                    baml_vm::Object::BamlType(_) => {
+                        output.push_str("BamlType\n");
                     }
                 }
             }
